@@ -25,7 +25,7 @@ $winVMParameters = @{
 $winVMDeploymentParameters = @{
     Name = "winVMDeploy"
     ResourceGroupName = $winVMRG.ResourceGroupName
-    TemplateFile = ".\windows-vm\azuredeploy.json"
+    TemplateFile = ".\azuredeploy.json"
     TemplateParameterObject = $winVMParameters
     Mode = "Incremental"
 }

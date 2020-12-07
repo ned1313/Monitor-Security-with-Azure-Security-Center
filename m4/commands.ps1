@@ -27,7 +27,7 @@ $sqldbParameters = @{
 $sqldbDeploymentParameters = @{
     Name = "sqldbDeploy"
     ResourceGroupName = $sqldbRG.ResourceGroupName
-    TemplateFile = "https://github.com/Azure/azure-quickstart-templates/blob/master/101-sql-database/azuredeploy.json"
+    TemplateUri = "https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/101-sql-database/azuredeploy.json"
     TemplateParameterObject = $sqldbParameters
     Mode = "Incremental"
 }
@@ -35,7 +35,7 @@ $sqldbDeploymentParameters = @{
 New-AzResourceGroupDeployment @sqldbDeploymentParameters
 
 #Now let's create the Azure Container Registry
-$acrRGName = "$prefix-acr-$id"
+$acrRGName = "${prefix}acr${id}"
 
 #Create the necessary resource groups
 $acrRG = New-AzResourceGroup -Name $acrRGName -Location $Location
@@ -43,25 +43,27 @@ $acrRG = New-AzResourceGroup -Name $acrRGName -Location $Location
 #Define parameter values for the ARM template
 $arcParameters = @{
     acrName = $acrRGName
-    acrAdminUserEnabled = true
+    acrAdminUserEnabled = $true
 }
 
 $arcDeploymentParameters = @{
     Name = "arcDeploy"
     ResourceGroupName = $acrRG.ResourceGroupName
-    TemplateFile = "https://github.com/Azure/azure-quickstart-templates/blob/master/101-container-registry/azuredeploy.json"
+    TemplateUri = "https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/101-container-registry/azuredeploy.json"
     TemplateParameterObject = $arcParameters
     Mode = "Incremental"
 }
 
 New-AzResourceGroupDeployment @arcDeploymentParameters
 
+$creds = Get-AzContainerRegistryCredential -ResourceGroupName $acrRGName -Name $acrRGName
+
 # Log into ACR with docker
-docker login "${acrName}.azurecr.io"
+docker login "${acrRGName}.azurecr.io" --username $creds.Username --password $creds.Password
 
 # Pull insecure docker container
 docker pull vulnerables/web-dvwa:latest
 
 # Push insecure docker container
-docker tag vulnerables/web-dvwa "${acrName}.azurecr.io/testing/web-dvwa"
-docker push "${acrName}.azurecr.io/testing/web-dvwa"
+docker tag vulnerables/web-dvwa "${acrRGName}.azurecr.io/testing/web-dvwa"
+docker push "${acrRGName}.azurecr.io/testing/web-dvwa"
